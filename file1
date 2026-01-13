@@ -1,0 +1,86 @@
+# AI for Livestock Emission Tracking using Synthetic Data
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# -----------------------------
+# 1. Generate Synthetic Dataset
+# -----------------------------
+np.random.seed(42)
+
+num_samples = 500
+
+animal_type = np.random.choice([0, 1, 2], num_samples)  
+# 0 = Cow, 1 = Sheep, 2 = Goat
+
+weight_kg = np.random.uniform(30, 700, num_samples)
+age_years = np.random.uniform(0.5, 10, num_samples)
+daily_feed_kg = np.random.uniform(1, 25, num_samples)
+
+# Synthetic methane emission calculation (kg CH4/day)
+methane_emission = (
+    0.02 * daily_feed_kg +
+    0.001 * weight_kg +
+    0.05 * age_years +
+    animal_type * 0.1 +
+    np.random.normal(0, 0.05, num_samples)
+)
+
+# Create DataFrame
+data = pd.DataFrame({
+    "animal_type": animal_type,
+    "weight_kg": weight_kg,
+    "age_years": age_years,
+    "daily_feed_kg": daily_feed_kg,
+    "methane_emission_kg_day": methane_emission
+})
+
+# -----------------------------
+# 2. Feature Selection
+# -----------------------------
+X = data.drop("methane_emission_kg_day", axis=1)
+y = data["methane_emission_kg_day"]
+
+# -----------------------------
+# 3. Train-Test Split
+# -----------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# -----------------------------
+# 4. Train AI Model
+# -----------------------------
+model = RandomForestRegressor(
+    n_estimators=100,
+    random_state=42
+)
+model.fit(X_train, y_train)
+
+# -----------------------------
+# 5. Model Evaluation
+# -----------------------------
+y_pred = model.predict(X_test)
+
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print("Model Performance:")
+print("Mean Absolute Error (MAE):", round(mae, 4))
+print("R² Score:", round(r2, 4))
+
+# -----------------------------
+# 6. Sample Prediction
+# -----------------------------
+sample = pd.DataFrame({
+    "animal_type": [0],  # Cow
+    "weight_kg": [500],
+    "age_years": [5],
+    "daily_feed_kg": [20]
+})
+
+predicted_emission = model.predict(sample)
+print("\nPredicted Methane Emission (kg/day):", round(predicted_emission[0], 4))
